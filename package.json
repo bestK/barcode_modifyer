@@ -1,0 +1,27 @@
+{
+  "name": "barcode-modifyer",
+  "displayName": "Barcode Modifyer",
+  "version": "1.0.0",
+  "description": "劫持扫码枪输入，自动添加前缀或后缀",
+  "author": "liuhaorannvpengyou",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package"
+  },
+  "dependencies": {
+    "@plasmohq/storage": "^1.9.2",
+    "plasmo": "0.90.5",
+    "vue": "3.4.21"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.268",
+    "prettier": "3.2.4",
+    "typescript": "5.3.3"
+  },
+  "manifest": {
+    "host_permissions": [
+      "<all_urls>"
+    ]
+  }
+}
