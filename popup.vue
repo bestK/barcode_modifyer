@@ -9,7 +9,7 @@ const storage = new Storage({ area: 'sync' });
 const enabled = ref(true);
 const prefix = ref('');
 const suffix = ref('_111');
-const appendEnter = ref(false);
+const appendEnter = ref(true);
 const lang = ref<Lang>('en');
 const saved = ref(false);
 

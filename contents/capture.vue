@@ -39,7 +39,7 @@ interface ToastData {
 const toast = ref<ToastData | null>(null);
 const lang = ref<Lang>('en');
 
-const settings = reactive({ enabled: true, prefix: '', suffix: '_111', appendEnter: false });
+const settings = reactive({ enabled: true, prefix: '', suffix: '_111', appendEnter: true });
 const buffer: { char: string; time: number }[] = [];
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -145,7 +145,7 @@ onMounted(async () => {
     settings.enabled = e !== undefined ? e : true;
     settings.prefix = p ?? '';
     settings.suffix = s ?? '_111';
-    settings.appendEnter = ae !== undefined ? ae : false;
+    settings.appendEnter = ae !== undefined ? ae : true;
     lang.value = l ?? 'en';
 
     unwatch = storage.watch({
