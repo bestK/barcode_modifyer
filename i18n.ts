@@ -32,6 +32,8 @@ export const en: typeof zh = {
   original: "Original",
   modified: "Modified",
   settings: "Settings",
+  appendEnter: "Append Enter",
+  appendEnterHint: "Trigger Enter/submit after modification",
 }
 
 export type Lang = "zh" | "en"

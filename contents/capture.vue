@@ -11,6 +11,25 @@ const MAX_INTERVAL = 80;
 const MIN_BARCODE_LEN = 3;
 const MAX_BUFFER = 100;
 const TERMINATOR_KEYS = new Set(['Enter', 'Tab']);
+// Keys that should be ignored (not buffered, not reset the buffer)
+const IGNORED_KEYS = new Set([
+    'Shift',
+    'Control',
+    'Alt',
+    'Meta',
+    'CapsLock',
+    'NumLock',
+    'ScrollLock',
+    'Fn',
+    'FnLock',
+    'Hyper',
+    'Super',
+    'OS',
+    'ContextMenu',
+    'Dead',
+    'Process',
+    'Unidentified',
+]);
 
 interface ToastData {
     original: string;
@@ -20,7 +39,7 @@ interface ToastData {
 const toast = ref<ToastData | null>(null);
 const lang = ref<Lang>('en');
 
-const settings = reactive({ enabled: true, prefix: '', suffix: '_111' });
+const settings = reactive({ enabled: true, prefix: '', suffix: '_111', appendEnter: false });
 const buffer: { char: string; time: number }[] = [];
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -75,6 +94,31 @@ const onKeyDown = (e: KeyboardEvent) => {
 
             showToast({ original: raw, modified });
             buffer.length = 0;
+
+            if (settings.appendEnter) {
+                // Trigger submit/enter behavior after modification
+                if (active && active instanceof HTMLInputElement && active.form) {
+                    // Use requestSubmit so SPA form validation / submit handlers fire
+                    if (typeof active.form.requestSubmit === 'function') {
+                        active.form.requestSubmit();
+                    } else {
+                        active.form.submit();
+                    }
+                } else if (active) {
+                    // Fallback: dispatch synthetic Enter events for framework listeners
+                    const opts = {
+                        key: 'Enter',
+                        code: 'Enter',
+                        keyCode: 13,
+                        which: 13,
+                        bubbles: true,
+                        cancelable: true,
+                    };
+                    active.dispatchEvent(new KeyboardEvent('keydown', opts));
+                    active.dispatchEvent(new KeyboardEvent('keypress', opts));
+                    active.dispatchEvent(new KeyboardEvent('keyup', opts));
+                }
+            }
             return;
         }
     }
@@ -82,7 +126,8 @@ const onKeyDown = (e: KeyboardEvent) => {
     if (key.length === 1 && BARCODE_KEY.test(key)) {
         buffer.push({ char: key, time: Date.now() });
         if (buffer.length > MAX_BUFFER) buffer.shift();
-    } else if (!TERMINATOR_KEYS.has(key)) {
+    } else if (!TERMINATOR_KEYS.has(key) && !IGNORED_KEYS.has(key)) {
+        // Non-barcode, non-terminator, non-modifier key resets
         buffer.length = 0;
     }
 };
@@ -90,16 +135,18 @@ const onKeyDown = (e: KeyboardEvent) => {
 let unwatch: (() => void) | null = null;
 
 onMounted(async () => {
-    const [e, p, s, l] = await Promise.all([
+    const [e, p, s, ae, l] = await Promise.all([
         storage.get<boolean>('enabled'),
         storage.get<string>('prefix'),
         storage.get<string>('suffix'),
+        storage.get<boolean>('appendEnter'),
         storage.get<Lang>('lang'),
     ]);
     settings.enabled = e !== undefined ? e : true;
     settings.prefix = p ?? '';
     settings.suffix = s ?? '_111';
-    lang.value = l ?? 'zh';
+    settings.appendEnter = ae !== undefined ? ae : false;
+    lang.value = l ?? 'en';
 
     unwatch = storage.watch({
         enabled: c => {
@@ -110,6 +157,9 @@ onMounted(async () => {
         },
         suffix: c => {
             if (c.newValue !== undefined) settings.suffix = c.newValue;
+        },
+        appendEnter: c => {
+            if (c.newValue !== undefined) settings.appendEnter = c.newValue;
         },
         lang: c => {
             if (c.newValue !== undefined) lang.value = c.newValue as Lang;
