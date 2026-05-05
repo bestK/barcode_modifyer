@@ -1,5 +1,5 @@
-import { createApp, defineComponent, h, ref } from "vue"
 import { Storage } from "@plasmohq/storage"
+import { createApp, defineComponent, h, ref } from "vue"
 
 import { type Lang, t } from "~i18n"
 
@@ -177,18 +177,31 @@ function onKeyDown(e: KeyboardEvent) {
       showToast({ original: raw, modified })
       buffer.length = 0
 
-      if (settings.appendEnter) {
-        if (active && active instanceof HTMLInputElement && active.form) {
+      if (settings.appendEnter && active) {
+        // 1) Dispatch synthetic Enter events so framework listeners
+        //    (Vue @keydown.enter / React onKeyDown === 'Enter' / etc.) fire.
+        const opts = { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true }
+        const kd = new KeyboardEvent("keydown", opts)
+        active.dispatchEvent(kd)
+        active.dispatchEvent(new KeyboardEvent("keypress", opts))
+        active.dispatchEvent(new KeyboardEvent("keyup", opts))
+
+        // 2) If inside a form and keydown wasn't cancelled, also trigger native submit
+        //    (synthetic events won't cause implicit form submission because isTrusted=false).
+        if (
+          !kd.defaultPrevented &&
+          active instanceof HTMLInputElement &&
+          active.form
+        ) {
           if (typeof active.form.requestSubmit === "function") {
-            active.form.requestSubmit()
+            try {
+              active.form.requestSubmit()
+            } catch {
+              active.form.submit()
+            }
           } else {
             active.form.submit()
           }
-        } else if (active) {
-          const opts = { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true }
-          active.dispatchEvent(new KeyboardEvent("keydown", opts))
-          active.dispatchEvent(new KeyboardEvent("keypress", opts))
-          active.dispatchEvent(new KeyboardEvent("keyup", opts))
         }
       }
       return
