@@ -1,9 +1,13 @@
 {
     "name": "barcode-modifyer",
     "displayName": "Barcode Modifyer",
-    "version": "1.1.0",
-    "description": "劫持扫码枪输入，自动添加前缀或后缀",
-    "author": "liuhaorannvpengyou",
+    "version": "1.2.0",
+    "description": "Intercept barcode scanner input & outgoing requests, auto-add prefix/suffix | 劫持扫码枪输入与网络请求，自动添加前缀/后缀",
+    "author": "bestk",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bestK/barcode_modifyer"
+    },
     "scripts": {
         "dev": "plasmo dev",
         "build": "plasmo build",
