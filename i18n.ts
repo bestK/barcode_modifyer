@@ -26,7 +26,14 @@ export const zh = {
     paramName: '参数',
     paramNamePlaceholder: '参数名（如 productSku）',
     method: '方法',
-    removeRule: '删除'
+    removeRule: '删除',
+    exportConfig: '导出配置',
+    importConfig: '导入配置',
+    importSuccess: '配置导入成功',
+    importFailed: '导入失败：文件格式错误',
+    importConfirmTitle: '确认导入以下配置？',
+    importConfirmHint: '点「确定」将覆盖当前设置。',
+    fileLabel: '文件'
 };
 
 export const en: typeof zh = {
@@ -57,7 +64,14 @@ export const en: typeof zh = {
     paramName: 'Param',
     paramNamePlaceholder: 'Param name (e.g. productSku)',
     method: 'Method',
-    removeRule: 'Remove'
+    removeRule: 'Remove',
+    exportConfig: 'Export',
+    importConfig: 'Import',
+    importSuccess: 'Config imported successfully',
+    importFailed: 'Import failed: invalid file format',
+    importConfirmTitle: 'Import this configuration?',
+    importConfirmHint: 'OK will overwrite current settings.',
+    fileLabel: 'File'
 };
 
 export type Lang = 'zh' | 'en';

@@ -61,6 +61,85 @@ const saveSettings = async () => {
     saved.value = true;
     setTimeout(() => (saved.value = false), 1500);
 };
+
+const importFileRef = ref<HTMLInputElement | null>(null);
+
+const onExport = () => {
+    const payload = {
+        type: 'barcode-modifier-config',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        appVersion: version,
+        settings: {
+            enabled: enabled.value,
+            prefix: prefix.value,
+            suffix: suffix.value,
+            appendEnter: appendEnter.value,
+            interceptInput: interceptInput.value,
+            lang: lang.value,
+            rules: normalizeRules(rules.value)
+        }
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.download = `barcode-modifier-config-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+const onImportClick = () => {
+    importFileRef.value?.click();
+};
+
+const onImportFile = async (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const s =
+            data && typeof data === 'object' && data.settings && typeof data.settings === 'object'
+                ? data.settings
+                : data;
+        if (!s || typeof s !== 'object') throw new Error('invalid format');
+
+        const cleanedRules = Array.isArray(s.rules) ? normalizeRules(s.rules) : null;
+        const summaryLines = [
+            `${t(lang.value, 'importConfirmTitle')}`,
+            '',
+            `${t(lang.value, 'fileLabel')}: ${file.name}`
+        ];
+        if (typeof s.prefix === 'string') summaryLines.push(`${t(lang.value, 'prefix')}: ${s.prefix || '(empty)'}`);
+        if (typeof s.suffix === 'string') summaryLines.push(`${t(lang.value, 'suffix')}: ${s.suffix || '(empty)'}`);
+        if (cleanedRules) summaryLines.push(`${t(lang.value, 'rulesTitle')}: ${cleanedRules.length}`);
+        summaryLines.push('', t(lang.value, 'importConfirmHint'));
+
+        if (!window.confirm(summaryLines.join('\n'))) {
+            return;
+        }
+
+        if (typeof s.enabled === 'boolean') enabled.value = s.enabled;
+        if (typeof s.prefix === 'string') prefix.value = s.prefix;
+        if (typeof s.suffix === 'string') suffix.value = s.suffix;
+        if (typeof s.appendEnter === 'boolean') appendEnter.value = s.appendEnter;
+        if (typeof s.interceptInput === 'boolean') interceptInput.value = s.interceptInput;
+        if (s.lang === 'zh' || s.lang === 'en') lang.value = s.lang;
+        if (cleanedRules) rules.value = cleanedRules;
+
+        await saveSettings();
+        alert(t(lang.value, 'importSuccess'));
+    } catch {
+        alert(t(lang.value, 'importFailed'));
+    } finally {
+        target.value = '';
+    }
+};
 </script>
 
 <template>
@@ -171,6 +250,18 @@ const saveSettings = async () => {
         <button class="btn" @click="saveSettings">
             {{ saved ? `✓ ${t(lang, 'saved')}` : t(lang, 'save') }}
         </button>
+
+        <div class="io-row">
+            <button class="btn-secondary" @click="onExport">{{ t(lang, 'exportConfig') }}</button>
+            <button class="btn-secondary" @click="onImportClick">{{ t(lang, 'importConfig') }}</button>
+            <input
+                ref="importFileRef"
+                type="file"
+                accept="application/json,.json"
+                @change="onImportFile"
+                style="display: none"
+            />
+        </div>
     </div>
 </template>
 
@@ -244,6 +335,26 @@ const saveSettings = async () => {
     font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
+}
+.io-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+.btn-secondary {
+    flex: 1;
+    padding: 6px 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.btn-secondary:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
 }
 .lang-btn {
     padding: 4px 12px;
